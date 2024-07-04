@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:uuid/uuid.dart';
 
 void main(List<String> args) {
   runApp(
@@ -8,9 +10,32 @@ void main(List<String> args) {
         primarySwatch: Colors.blue,
       ),
       debugShowCheckedModeBanner: false,
-      home: const HomePage(),
+      home: ApiProvider(
+        api: Api(),
+        child: const HomePage(),
+      ),
     ),
   );
+}
+
+class ApiProvider extends InheritedWidget {
+  final Api api;
+  final String uuid;
+
+  ApiProvider({
+    super.key,
+    required this.api,
+    required super.child,
+  }) : uuid = const Uuid().v4();
+
+  @override
+  bool updateShouldNotify(covariant ApiProvider oldWidget) {
+    return uuid != oldWidget.uuid;
+  }
+
+  static ApiProvider of(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<ApiProvider>()!;
+  }
 }
 
 class HomePage extends StatefulWidget {
@@ -21,24 +46,58 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  String title = "Tap the Screen";
+  ValueKey _textKey = const ValueKey<String?>(null);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        backgroundColor: Colors.blue,
+        title: Text(ApiProvider.of(context).api.dateAndTime ?? ""),
       ),
       body: GestureDetector(
-        onTap: () {
+        onTap: () async {
+          final api = ApiProvider.of(context).api;
+          final dateAndTime = await api.getDateAndTime();
           setState(() {
-            title = DateTime.now().toIso8601String();
+            _textKey = ValueKey(dateAndTime);
           });
         },
-        child: Container(
-          color: Colors.white,
+        child: SizedBox.expand(
+          child: Container(
+            color: Colors.white,
+            child: DateTimeWidget(
+              key: _textKey,
+            ),
+          ),
         ),
       ),
     );
+  }
+}
+
+class DateTimeWidget extends StatelessWidget {
+  const DateTimeWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final api = ApiProvider.of(context).api;
+    return Text(
+      api.dateAndTime ?? "Tap on screen to fetch data and time",
+    );
+  }
+}
+
+class Api {
+  String? dateAndTime;
+
+  Future<String> getDateAndTime() {
+    return Future.delayed(
+      const Duration(seconds: 1),
+      () => DateTime.now().toIso8601String(),
+    ).then((value) {
+      dateAndTime = value;
+      return value;
+    });
   }
 }
