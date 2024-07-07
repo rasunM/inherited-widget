@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:uuid/uuid.dart';
 
 void main(List<String> args) {
@@ -84,6 +83,7 @@ class DateTimeWidget extends StatelessWidget {
     final api = ApiProvider.of(context).api;
     return Text(
       api.dateAndTime ?? "Tap on screen to fetch data and time",
+      style: const TextStyle(fontSize: 18),
     );
   }
 }
